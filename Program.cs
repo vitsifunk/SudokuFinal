@@ -1,10 +1,14 @@
-﻿namespace SudokuFinal
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+
+namespace SudokuFinal
 {
-    internal abstract class Program
+    internal class Program
     {
         private static void Main(string[] args)
         {
-            // Έλεγχος για την ύπαρξη του ορίσματος
             if (args.Length < 1)
             {
                 Console.WriteLine("Usage: Solver <inputFile>");
@@ -13,48 +17,15 @@
 
             var inputFile = args[0];
 
-            int dataStructureNumber; // To store the user's choice
-            
-            // Επανάληψη μέχρι ο χρήστης να εισάγει έγκυρη επιλογή
-            while (true)
-            {
-                Console.WriteLine("Select solving method:");
-                Console.WriteLine("1: DFS with ArrayList");
-                Console.WriteLine("2: BFS with ArrayList");
-                Console.WriteLine("3: DFS with Stack");
-                Console.WriteLine("4: BFS with LinkedList");
-                Console.Write("\nEnter your choice (1-4): ");
+            // Επιλογή μεθόδου επίλυσης από τον χρήστη
+            var solvingMethod = GetUserChoice();
 
-                // Ανάγνωση και έλεγχος εγκυρότητας επιλογής
-                if (int.TryParse(Console.ReadLine(), out dataStructureNumber) &&
-                    dataStructureNumber is >= 1 and <= 4)
-                {
-                    break; // Valid input; exit the loop
-                }
+            Console.WriteLine($"\nYou selected option {solvingMethod}. Processing file '{inputFile}'...");
 
-                Console.WriteLine("\nInvalid choice. Please choose a number between 1 and 4.\n");
-            }
-
-            // Μετά την επιτυχή επιλογή, προχωρήστε με το πρόγραμμα
-            Console.WriteLine($"\nYou selected option {dataStructureNumber}. Processing file '{inputFile}'...");
-            // Continue with your solving logic here...
-
-
-            var initialBoard = new int[9, 9];
+            int[,] initialBoard;
             try
             {
-                using var reader = new StreamReader(inputFile);
-                // Ανάγνωση του πίνακα από το αρχείο
-                for (var i = 0; i < 9; i++)
-                {
-                    var line = reader.ReadLine();
-                    var numbers = line?.Split(' ');
-                    if (numbers == null) continue;
-                    for (var j = 0; j < numbers.Length; j++)
-                    {
-                        initialBoard[i, j] = int.Parse(numbers[j]);
-                    }
-                }
+                initialBoard = ReadSudokuFromFile(inputFile);
             }
             catch (Exception ex)
             {
@@ -63,18 +34,8 @@
             }
 
             var sudoku = new Solver(initialBoard);
+            var solved = SolveSudoku(sudoku, solvingMethod);
 
-            // Επίλυση του Sudoku ανάλογα με την επιλογή του χρήστη
-            var solved = dataStructureNumber switch
-            {
-                1 => sudoku.SolveDFS_ArrayList(),
-                2 => sudoku.SolveBFS_ArrayList(),
-                3 => sudoku.SolveDFS_Stack(),
-                4 => sudoku.SolveBFS_LinkedList(),
-                _ => false
-            };
-
-            // Εκτύπωση της λύσης ή του μηνύματος λάθους
             if (solved)
             {
                 Console.WriteLine("\nSolved Sudoku:\n");
@@ -84,6 +45,63 @@
             {
                 Console.WriteLine("No solution found for the Sudoku.");
             }
+        }
+
+        private static int GetUserChoice()
+        {
+            while (true)
+            {
+                Console.WriteLine("Select solving method:");
+                Console.WriteLine("1: DFS with ArrayList");
+                Console.WriteLine("2: BFS with ArrayList");
+                Console.WriteLine("3: DFS with Stack");
+                Console.WriteLine("4: BFS with LinkedList");
+                Console.Write("\nEnter your choice (1-4): ");
+
+                if (int.TryParse(Console.ReadLine(), out var choice) && choice is >= 1 and <= 4)
+                {
+                    return choice;
+                }
+
+                Console.WriteLine("\nInvalid choice. Please choose a number between 1 and 4.\n");
+            }
+        }
+
+        private static int[,] ReadSudokuFromFile(string filePath)
+        {
+            var board = new int[9, 9];
+
+            using var reader = new StreamReader(filePath);
+            for (var i = 0; i < 9; i++)
+            {
+                var line = reader.ReadLine();
+                if (string.IsNullOrWhiteSpace(line))
+                    throw new Exception("Invalid file format: missing line");
+
+                var numbers = line.Split(' ');
+                if (numbers.Length != 9)
+                    throw new Exception("Invalid file format: each line must contain exactly 9 numbers");
+
+                for (var j = 0; j < 9; j++)
+                {
+                    if (!int.TryParse(numbers[j], out board[i, j]))
+                        throw new Exception($"Invalid number at row {i + 1}, column {j + 1}");
+                }
+            }
+
+            return board;
+        }
+
+        private static bool SolveSudoku(Solver sudoku, int method)
+        {
+            return method switch
+            {
+                1 => sudoku.SolveDFS_ArrayList(),
+                2 => sudoku.SolveBFS_ArrayList(),
+                3 => sudoku.SolveDFS_Stack(),
+                4 => sudoku.SolveBFS_LinkedList(),
+                _ => false
+            };
         }
     }
 }

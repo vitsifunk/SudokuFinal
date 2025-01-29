@@ -2,7 +2,7 @@
   "profiles": {
     "SudokuFinal": {
       "commandName": "Project",
-      "commandLineArgs": "p01.txt ",
+      "commandLineArgs": "p01.txt 1",
       "workingDirectory": "C:\\Users\\vitsi\\source\\repos\\SudokuFinal\\bin\\Debug\\net8.0"
     }
   }
